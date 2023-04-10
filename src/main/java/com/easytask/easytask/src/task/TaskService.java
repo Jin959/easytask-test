@@ -145,7 +145,7 @@ public class TaskService {
     }
 
     public void updateTaskToMatching(Long taskId) {
-        Task task = taskRepository.findByIdAndState(taskId, ACTIVE)
+        Task task = taskRepository.findWithUserByIdAndState(taskId, ACTIVE)
                 .orElseThrow(() -> new BaseException(NOT_FOUND_TASK));
         Optional.ofNullable(task.getTaskName())
                 .orElseThrow(() -> new BaseException(BAD_REQUEST_NO_TASK_NAME));
@@ -154,6 +154,10 @@ public class TaskService {
         Optional.ofNullable(task.getDetails())
                 .orElseThrow(() -> new BaseException(BAD_REQUEST_NO_DETAILS));
 
+        if (task.getMatchingStatus() != Task.MatchingStatus.STANDBY) {
+            throw new BaseException(BAD_REQUEST_ALREADY_QUEUED_MATCHING);
+        }
+
         List<RelatedAbility> relatedAbilityList = task.getRelatedAbilityList();
         if (relatedAbilityList.isEmpty()) {
             throw new BaseException(BAD_REQUEST_NO_RELATED_ABILITY);
@@ -161,42 +165,9 @@ public class TaskService {
 
         try {
             User customer = task.getCustomer();
-            if (task.getMatchingStatus() == Task.MatchingStatus.STANDBY) {
-                matchingRequest.addTask(taskId);
-                task.updateMatchingStatus(Task.MatchingStatus.MATCHING);
-                mailService.sendMatchingMail(new MailGenerator().createMatchingMail(task, customer));
-            }
-        } catch (Exception exception) {
-            throw new BaseException(MATCHING_REQUEST_ENROLL_ERROR);
-        }
-
-        List<User> matchedIrumiList;
-        try {
-            Map<String, Object> parameterValues = new HashMap<>();
-            parameterValues.put("taskId", task.getId());
-            parameterValues.put("taskCategorySmall", task.getCategorySmall());
-            parameterValues.put("relatedAbilityList", relatedAbilityList);
-            parameterValues.put("abilityCount", relatedAbilityList.size());
-            matchedIrumiList = userMapper.findUserOnMatchingMail(parameterValues);
-        } catch (Exception exception) {
-            throw new BaseException(DYNAMIC_QUERY_CONNECTION_ERROR);
-        }
-
-        List<TaskMail> taskMailList = matchedIrumiList.stream().map(irumi -> {
-            try {
-                mailService.sendMatchingMail(new MailGenerator().createMatchingInvitation(task, irumi));
-                return TaskMail.builder()
-                        .irumi(irumi)
-                        .task(task)
-                        .build();
-            } catch (Exception exception) {
-                throw new BaseException(MAIL_SEND_ERROR);
-            }
-        }).collect(Collectors.toList());
-
-        try {
-            taskMailRepository.saveAll(taskMailList);
-            matchingRequest.moveIndex();
+            task.updateMatchingStatus(Task.MatchingStatus.MATCHING);
+            matchingRequest.addTask(task);
+            mailService.sendMatchingMail(new MailGenerator().createMatchingMail(task, customer));
         } catch (Exception exception) {
             throw new BaseException(DB_CONNECTION_ERROR);
         }
