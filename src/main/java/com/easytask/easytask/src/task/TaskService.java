@@ -1,6 +1,7 @@
 package com.easytask.easytask.src.task;
 
 import com.easytask.easytask.common.exception.BaseException;
+import com.easytask.easytask.common.scheduler.MatchingRequest;
 import com.easytask.easytask.common.util.MailGenerator;
 import com.easytask.easytask.common.util.MailService;
 import com.easytask.easytask.src.task.dto.request.RelatedAbilityRequestDto;
@@ -46,6 +47,7 @@ public class TaskService {
     private final UserRepository userRepository;
     private final MailService mailService;
     private final UserMapper userMapper;
+    private final MatchingRequest matchingRequest;
 
     public TaskIdResponseDto createTask(Long customerId, TaskRequestDto taskRequestDto) {
         User customer = userRepository.findByIdAndState(customerId, ACTIVE)
@@ -159,8 +161,11 @@ public class TaskService {
 
         try {
             User customer = task.getCustomer();
-            task.updateMatchingStatus(Task.MatchingStatus.MATCHING);
-            mailService.sendMatchingMail(new MailGenerator().createMatchingMail(task, customer));
+            if (task.getMatchingStatus() == Task.MatchingStatus.STANDBY) {
+                matchingRequest.addTask(taskId);
+                task.updateMatchingStatus(Task.MatchingStatus.MATCHING);
+                mailService.sendMatchingMail(new MailGenerator().createMatchingMail(task, customer));
+            }
         } catch (Exception exception) {
             throw new BaseException(MATCHING_REQUEST_ENROLL_ERROR);
         }
@@ -191,6 +196,7 @@ public class TaskService {
 
         try {
             taskMailRepository.saveAll(taskMailList);
+            matchingRequest.moveIndex();
         } catch (Exception exception) {
             throw new BaseException(DB_CONNECTION_ERROR);
         }
@@ -219,6 +225,7 @@ public class TaskService {
             mappingRepository.save(taskUserMapping);
 
             if (checkMatchingIsOver(matchedCount + 1, needCount)) {
+                matchingRequest.removeTask(taskId);
                 task.updateMatchingStatus(Task.MatchingStatus.MATCHED);
                 mailService.sendMatchingMail(new MailGenerator().createMatchedMail(task, customer));
             }
