@@ -1,5 +1,6 @@
 package com.easytask.easytask.common.scheduler;
 
+import com.easytask.easytask.src.task.entity.Task;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -13,16 +14,15 @@ import java.util.List;
 @Setter
 @Component
 public class MatchingRequest {
-
-    private List<Long> taskList = new ArrayList<>();
+    private List<Task> taskList = new ArrayList<>();
     private Integer scheduledIndex = 0;
 
-    public void addTask(Long taskId) {
-        taskList.add(taskId);
+    public void addTask(Task task) {
+        taskList.add(task);
         log.info("after add matchingRequest size : {}", taskList.size());
     }
 
-    public Long getScheduledTaskId() {
+    public Task getScheduledTask() {
         return taskList.get(scheduledIndex);
     }
 
@@ -31,7 +31,12 @@ public class MatchingRequest {
     }
 
     public void removeTask(Long taskId) {
-        taskList.remove(taskId);
-        log.info("after matchingRequest size : {}", taskList.size());
+        for (Task task : taskList) {
+            if (task.getId() == taskId) {
+                taskList.remove(task);
+                log.info("after matchingRequest size : {}", taskList.size());
+                break;
+            }
+        }
     }
 }
