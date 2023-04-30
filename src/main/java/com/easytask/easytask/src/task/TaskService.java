@@ -18,7 +18,6 @@ import com.easytask.easytask.src.task.repository.TaskMailRepository;
 import com.easytask.easytask.src.task.repository.TaskRepository;
 import com.easytask.easytask.src.task.repository.TaskUserMappingRepository;
 import com.easytask.easytask.src.user.entity.User;
-import com.easytask.easytask.src.user.repository.UserMapper;
 import com.easytask.easytask.src.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +28,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.easytask.easytask.common.BaseEntity.State.ACTIVE;
 import static com.easytask.easytask.common.response.BaseResponseStatus.*;
@@ -46,7 +44,6 @@ public class TaskService {
     private final TaskUserMappingRepository mappingRepository;
     private final UserRepository userRepository;
     private final MailService mailService;
-    private final UserMapper userMapper;
     private final MatchingRequest matchingRequest;
 
     public TaskIdResponseDto createTask(Long customerId, TaskRequestDto taskRequestDto) {
