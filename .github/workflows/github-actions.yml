@@ -89,7 +89,7 @@ jobs:
           docker volume prune -f
           docker login
           docker pull ${{ secrets.DOCKER_REPO }}
-          docker compose -f ${{ secrets.DOCKER_COMPOSE_FILE }} up --build
+          docker compose -f ${{ secrets.DOCKER_COMPOSE_FILE }} up -d --build
           docker image prune -f
     
     - name: Remove IP FROM security group
