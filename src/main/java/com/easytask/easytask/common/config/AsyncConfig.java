@@ -13,7 +13,7 @@ import java.util.concurrent.Executor;
 @Slf4j
 @Configuration
 @EnableAsync
-public class AsyncConfiguration implements AsyncConfigurer {
+public class AsyncConfig implements AsyncConfigurer {
 
     @Override
     @Bean(name = "mailExecutor")
@@ -22,13 +22,13 @@ public class AsyncConfiguration implements AsyncConfigurer {
         executor.setCorePoolSize(2);
         executor.setMaxPoolSize(4);
         executor.setQueueCapacity(8);
-        executor.setThreadNamePrefix("AsyncMailThreadExecutor-");
+        executor.setThreadNamePrefix("MailingThread-");
         executor.initialize();
         return executor;
     }
 
     @Override
     public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
-        return (exception, method, params) -> log.error("AsyncMailThread Exception in Async Method: ", exception);
+        return (exception, method, params) -> log.error("AsyncMailThread Exception: ", exception);
     }
 }
